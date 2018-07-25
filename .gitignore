@@ -1,0 +1,8 @@
+.idea/
+**/.DS_Store
+**/.ipynb_checkpoints
+**/__pycache__
+bot_keywords.py
+config.py
+main.py
+loaders/ipterms/
