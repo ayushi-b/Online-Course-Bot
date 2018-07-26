@@ -7,3 +7,5 @@ config.py
 main.py
 loaders/ipterms/
 venv/
+db_conversion.py
+**/logs/

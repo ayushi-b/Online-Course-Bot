@@ -1,4 +1,5 @@
-import MySQLdb
+import psycopg2 as pg
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 from bs4 import BeautifulSoup
 import requests
 import json
@@ -29,7 +30,7 @@ for letter in range(97, 123):
 
     try:
         total_terms = soup.find('li', {"class": "terms"}).text.strip().split()[-2].replace(',', '')
-    except:
+    except Exception as e:
         print("\nSetting total_terms = 10 for {}\n".format(letter))
         total_terms = 10
 
@@ -56,14 +57,14 @@ for letter in range(97, 123):
 print("\nTotal number of terms on IP = {}\n".format(len(letter_terms)))
 # print(letter_terms)
 
-db = MySQLdb.connect(
+connection = pg.connect(
     host=config.HOST,
     user=config.USER,
-    db=config.DATABASE
+    dbname=config.DATABASE
 )
+connection.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
 
-
-cursor = db.cursor()
+cursor = connection.cursor()
 
 cursor.execute('SELECT link FROM {};'.format(
     config.IPTERMS_TABLE
@@ -98,11 +99,11 @@ for key, value in letter_terms.items():
     # print(paragraphs[1:])
     content = ' '.join(paragraphs[1:])
 
-    query = """INSERT INTO {}(link, content, term) VALUES ("{}", "{}", "{}");""".format(
+    query = """INSERT INTO {}(link, content, term) VALUES ('{}', '{}', '{}');""".format(
         config.IPTERMS_TABLE,
         url,
-        content.replace('\"', '\''),
-        key.replace('\"', '\''),
+        content.replace('\'', '\"'),
+        key.replace('\'', '\"'),
     )
     # print(query)
 
@@ -110,19 +111,20 @@ for key, value in letter_terms.items():
         cursor.execute(query)
         c += 1
         print("Added {} terms to db. Discarded = {}".format(c, count))
-    except:
+    except Exception as e:
         count += 1
         print("\nUnable to add {} to db. Total terms discarded till now = {}\n".format(key, count))
         f.write(url+"\n")
     finally:
-        db.commit()
+        connection.commit()
 
 print("{} terms found.".format(found))
 
 cursor.execute('SELECT * FROM {};'.format(config.IPTERMS_TABLE))
 print(cursor.rowcount)
 
-db.commit()
+connection.commit()
 f.close()
 f2.close()
-db.close()
+cursor.close()
+connection.close()

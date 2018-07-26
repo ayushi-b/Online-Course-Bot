@@ -1,6 +1,7 @@
-from flask import Flask, request, Response
-import config
-import MySQLdb
+from flask import request, Response
+from statbot import config
+import psycopg2 as pg
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 import re
 import wikipedia as wiki
 from textblob import TextBlob as tb
@@ -8,6 +9,7 @@ from nltk.corpus import stopwords
 from threading import Thread
 import requests
 import json
+from statbot import app
 
 
 stop_words = set(stopwords.words('english'))
@@ -16,7 +18,7 @@ emoji_pattern = re.compile(config.EMOTICONS, flags=re.UNICODE)
 # import slackclient
 # bot_slack_client = slackclient.SlackClient(bot_token)
 
-app = Flask(__name__)
+# app = Flask(__name__)
 
 
 @app.route('/', methods=['GET'])
@@ -55,15 +57,16 @@ def search_db(keywords, response_url):
     keywords = (" ".join(keywords)).strip()
     # print(keywords)
 
-    db = MySQLdb.connect(
+    connection = pg.connect(
         host=config.HOST,
         user=config.USER,
-        db=config.DATABASE
+        dbname=config.DATABASE
     )
+    connection.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
 
-    cursor = db.cursor()
+    cursor = connection.cursor()
 
-    query = """SELECT {} FROM {} WHERE LOWER({}) LIKE "%{}%";""".format(
+    query = """SELECT {} FROM {} WHERE LOWER({}) LIKE '% {}%';""".format(
         'link',
         'forum_data',
         'topic',
@@ -72,7 +75,7 @@ def search_db(keywords, response_url):
     cursor.execute(query)
     forum_result = cursor.fetchall()
 
-    query = """SELECT {} FROM {} WHERE LOWER({}) = "{}";""".format(
+    query = """SELECT {} FROM {} WHERE LOWER({}) = '{}';""".format(
         'content',
         'ipterms',
         'term',
@@ -91,6 +94,8 @@ def search_db(keywords, response_url):
             final_result += wiki.summary(keywords)
         except wiki.DisambiguationError:
             final_result += wiki.summary(keywords + ' (statistics)')
+        except Exception as e:
+            print("Wiki exception occurred: ", e)
 
     if forum_result:
         final_result += "\n\n\n ` Here are a few forum discussions related to the topic " \
@@ -101,6 +106,7 @@ def search_db(keywords, response_url):
         final_result += "\n\n\n ` NO RELATED FORUM POST FOUND. `"
 
     cursor.close()
+    connection.close()
 
     # print(final_result)
 

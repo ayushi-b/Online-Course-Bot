@@ -2,8 +2,9 @@ from requests import session
 import json
 import config
 from bs4 import BeautifulSoup
-import MySQLdb
 import re
+import psycopg2 as pg
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 from datetime import datetime
 
 
@@ -14,13 +15,14 @@ payload = {
     'password': config.PASSWORD
 }
 
-db = MySQLdb.connect(
+connection = pg.connect(
     host=config.HOST,
     user=config.USER,
-    db=config.DATABASE
+    dbname=config.DATABASE
 )
+connection.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
 
-cursor = db.cursor()
+cursor = connection.cursor()
 
 cursor.execute('SELECT post_id FROM {};'.format(
     config.FORUM_TABLE
@@ -58,14 +60,14 @@ with session() as c:
                 post_id = link.split('/')[-1]
 
                 if (int(post_id) in pids) or (int(post_id) in new_ids):
-                    print("Repeated {} from {}.".format(link, j))
+                    # print("Repeated {} from {}.".format(link, j))
                     continue
 
-                query = """INSERT INTO {}(post_id, topic, link) VALUES ({}, "{}", "{}");""".format(
+                query = """INSERT INTO {}(post_id, topic, link) VALUES ({}, '{}', '{}');""".format(
                     config.FORUM_TABLE,
                     post_id,
-                    topic.replace('\"', '\''),
-                    link.replace('\"', '\''),
+                    topic.replace('\'', '\"'),
+                    link.replace('\'', '\"'),
                 )
                 print(query)
 
@@ -74,16 +76,17 @@ with session() as c:
                     cnt += 1
                     new_ids.append(int(post_id))
                     print("Added {} posts to db. Discarded {} till now.".format(cnt, count))
-                except:
+                except Exception as e:
                     count += 1
                     print("\nUnable to add post {} to db.\n".format(link))
                     f.write(link)
                 finally:
-                    db.commit()
+                    connection.commit()
 
 cursor.execute('SELECT * FROM {};'.format(config.FORUM_TABLE))
 print(cursor.rowcount)
 
-db.commit()
+connection.commit()
 f.close()
-db.close()
+cursor.close()
+connection.close()
