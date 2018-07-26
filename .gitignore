@@ -6,3 +6,4 @@ bot_keywords.py
 config.py
 main.py
 loaders/ipterms/
+venv/
