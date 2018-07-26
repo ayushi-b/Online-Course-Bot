@@ -1,6 +1,6 @@
 from requests import session
 import json
-import config
+from statbot import all_configurations
 from bs4 import BeautifulSoup
 import re
 import psycopg2 as pg
@@ -8,24 +8,24 @@ from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 from datetime import datetime
 
 
-emoji_pattern = re.compile(config.EMOTICONS, flags=re.UNICODE)
+emoji_pattern = re.compile(all_configurations.EMOTICONS, flags=re.UNICODE)
 
 payload = {
-    'email': config.EMAIL,
-    'password': config.PASSWORD
+    'email': all_configurations.EMAIL,
+    'password': all_configurations.PASSWORD
 }
 
 connection = pg.connect(
-    host=config.HOST,
-    user=config.USER,
-    dbname=config.DATABASE
+    host=all_configurations.HOST,
+    user=all_configurations.USER,
+    dbname=all_configurations.DATABASE
 )
 connection.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
 
 cursor = connection.cursor()
 
 cursor.execute('SELECT post_id FROM {};'.format(
-    config.FORUM_TABLE
+    all_configurations.FORUM_TABLE
 ))
 pids = [int(pid[0]) for pid in cursor.fetchall()]
 
@@ -35,18 +35,18 @@ f = open("logs/ud/udfailure{}.txt".format(datetime.now().strftime('%Y%m%d%H%M%S'
 
 with session() as c:
 
-    url = config.UDACITY_SIGNIN_URL
+    url = all_configurations.UDACITY_SIGNIN_URL
     c.post(url, data=json.dumps(payload))
 
     cnt = 0
     count = 0
 
-    for j in config.UDACITY_FORUM_TABS:
+    for j in all_configurations.UDACITY_FORUM_TABS:
         for i in range(500):
 
             print("\n PAGE - {} \t ({})\n".format(i + 1, j))
 
-            response = c.get(config.UD_FORUM_URL.format(j, i))
+            response = c.get(all_configurations.UD_FORUM_URL.format(j, i))
 
             s = BeautifulSoup(response.text, 'html.parser')
 
@@ -64,7 +64,7 @@ with session() as c:
                     continue
 
                 query = """INSERT INTO {}(post_id, topic, link) VALUES ({}, '{}', '{}');""".format(
-                    config.FORUM_TABLE,
+                    all_configurations.FORUM_TABLE,
                     post_id,
                     topic.replace('\'', '\"'),
                     link.replace('\'', '\"'),
@@ -83,7 +83,7 @@ with session() as c:
                 finally:
                     connection.commit()
 
-cursor.execute('SELECT * FROM {};'.format(config.FORUM_TABLE))
+cursor.execute('SELECT * FROM {};'.format(all_configurations.FORUM_TABLE))
 print(cursor.rowcount)
 
 connection.commit()

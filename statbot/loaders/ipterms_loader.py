@@ -3,7 +3,7 @@ from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 from bs4 import BeautifulSoup
 import requests
 import json
-import config
+from statbot import all_configurations
 from datetime import datetime
 
 
@@ -22,9 +22,8 @@ for letter in range(97, 123):
         continue
     except FileNotFoundError:
         print("'{}' terms not found. Scraping them.".format(letter))
-        pass
 
-    page = requests.get(config.IPTERM_URL.format(letter, 0))
+    page = requests.get(all_configurations.IPTERM_URL.format(letter, 0))
     page = page.text
     soup = BeautifulSoup(page, 'html.parser')
 
@@ -38,7 +37,7 @@ for letter in range(97, 123):
     # print(limit)
 
     for i in range(limit):
-        page = requests.get(config.IPTERM_URL.format(letter, i))
+        page = requests.get(all_configurations.IPTERM_URL.format(letter, i))
         page = page.text
         soup = BeautifulSoup(page, 'html.parser')
         ol = soup.find('ol')
@@ -58,16 +57,16 @@ print("\nTotal number of terms on IP = {}\n".format(len(letter_terms)))
 # print(letter_terms)
 
 connection = pg.connect(
-    host=config.HOST,
-    user=config.USER,
-    dbname=config.DATABASE
+    host=all_configurations.HOST,
+    user=all_configurations.USER,
+    dbname=all_configurations.DATABASE
 )
 connection.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
 
 cursor = connection.cursor()
 
 cursor.execute('SELECT link FROM {};'.format(
-    config.IPTERMS_TABLE
+    all_configurations.IPTERMS_TABLE
 ))
 tlinks = [tlink[0] for tlink in cursor.fetchall()]
 
@@ -84,7 +83,7 @@ f2 = open('logs/ipfound{}.txt'.format(datetime.now().strftime('%Y%m%d%H%M%S')), 
 
 for key, value in letter_terms.items():
 
-    url = config.IP_PREURL + value
+    url = all_configurations.IP_PREURL + value
 
     if url in tlinks:
         found += 1
@@ -100,7 +99,7 @@ for key, value in letter_terms.items():
     content = ' '.join(paragraphs[1:])
 
     query = """INSERT INTO {}(link, content, term) VALUES ('{}', '{}', '{}');""".format(
-        config.IPTERMS_TABLE,
+        all_configurations.IPTERMS_TABLE,
         url,
         content.replace('\'', '\"'),
         key.replace('\'', '\"'),
@@ -120,7 +119,7 @@ for key, value in letter_terms.items():
 
 print("{} terms found.".format(found))
 
-cursor.execute('SELECT * FROM {};'.format(config.IPTERMS_TABLE))
+cursor.execute('SELECT * FROM {};'.format(all_configurations.IPTERMS_TABLE))
 print(cursor.rowcount)
 
 connection.commit()

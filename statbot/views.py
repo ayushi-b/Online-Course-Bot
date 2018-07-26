@@ -1,5 +1,5 @@
 from flask import request, Response
-from statbot import config
+from statbot import all_configurations
 import psycopg2 as pg
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 import re
@@ -13,7 +13,7 @@ from statbot import app
 
 
 stop_words = set(stopwords.words('english'))
-emoji_pattern = re.compile(config.EMOTICONS, flags=re.UNICODE)
+emoji_pattern = re.compile(all_configurations.EMOTICONS, flags=re.UNICODE)
 
 # import slackclient
 # bot_slack_client = slackclient.SlackClient(bot_token)
@@ -28,7 +28,7 @@ def test():
 
 @app.route('/define', methods=['POST'])
 def define_bot():
-    if request.form.get('token') == config.DEFINE_TOKEN:
+    if request.form.get('token') == all_configurations.DEFINE_TOKEN:
         # print(request.form)
         response_url = request.form.get('response_url')
         # search_db(request.form.get('text'), response_url)
@@ -58,9 +58,9 @@ def search_db(keywords, response_url):
     # print(keywords)
 
     connection = pg.connect(
-        host=config.HOST,
-        user=config.USER,
-        dbname=config.DATABASE
+        host=all_configurations.HOST,
+        user=all_configurations.USER,
+        dbname=all_configurations.DATABASE
     )
     connection.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
 
