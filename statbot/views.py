@@ -60,7 +60,9 @@ def search_db(keywords, response_url):
     connection = pg.connect(
         host=all_configurations.HOST,
         user=all_configurations.USER,
-        dbname=all_configurations.DATABASE
+        dbname=all_configurations.DATABASE,
+        password=all_configurations.DB_PWD,
+        port=all_configurations.PORT
     )
     connection.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
 
