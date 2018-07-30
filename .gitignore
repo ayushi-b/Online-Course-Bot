@@ -3,7 +3,7 @@
 **/.ipynb_checkpoints
 **/__pycache__
 **/bot_keywords.py
-**/statbot/all_configurations.py
+# **/statbot/all_configurations.py
 **/main.py
 **/loaders/ipterms/
 **/venv/
