@@ -24,7 +24,6 @@ emoji_pattern = re.compile(all_configurations.EMOTICONS, flags=re.UNICODE)
 
 @app.route('/', methods=['GET'])
 def test():
-    print(request.form)
     thr = Thread(target=forum_loader.run_forum_loader)
     thr.start()
 
@@ -33,7 +32,6 @@ def test():
 
 @app.route('/define', methods=['POST'])
 def define_bot():
-    print(request.form)
     if request.form.get('token') == all_configurations.DEFINE_TOKEN:
         # print(request.form)
         response_url = request.form.get('response_url')
@@ -160,7 +158,7 @@ def search_db(keywords, response_url):
         for res in forum_result:
             num += 1
             if num > 10:
-                final_result += "\n\n*Found {} related forum posts. To have the full list please use the _{}_ slash command.*".format(
+                final_result += "\n\n*Found {} related forum posts. To have the full list please use the _'{}'_ slash command.*".format(
                     len(forum_result),
                     all_configurations.FORUM_POST_SLASH_COMMAND
                 )
