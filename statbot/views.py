@@ -57,6 +57,12 @@ def search_db(keywords, response_url):
     keywords = emoji_pattern.sub(r'', keywords)
     # print(1, keywords)
     keywords = keywords.strip().split()
+    query_keywords = keywords
+
+    query_keywords = [word for word in query_keywords if word[0] != '(' and word [-1] != ')']
+    query_keywords = [str(word.replace('[^\w\s]', '').lower()) for word in query_keywords if word not in stop_words]
+    query_keywords = (" ".join(query_keywords)).strip()
+
     # print(2, keywords)
     keywords = [str(word.replace('[^\w\s]', '').lower()) for word in keywords if word not in stop_words]
     # print(3, keywords)
@@ -78,7 +84,7 @@ def search_db(keywords, response_url):
         'link',
         'forum_data',
         'topic',
-        keywords
+        query_keywords
     )
     cursor.execute(query)
     forum_result = cursor.fetchall()
