@@ -10,6 +10,7 @@ from threading import Thread
 import requests
 import json
 from statbot import app
+from statbot.loaders import forum_loader
 
 
 stop_words = set(stopwords.words('english'))
@@ -23,7 +24,8 @@ emoji_pattern = re.compile(all_configurations.EMOTICONS, flags=re.UNICODE)
 
 @app.route('/', methods=['GET'])
 def test():
-    return "Slackbot is running."
+    result = forum_loader.run_forum_loader()
+    return "Slackbot is running.\n\n" + result
 
 
 @app.route('/define', methods=['POST'])
@@ -77,27 +79,27 @@ def search_db(keywords, response_url):
     cursor.execute(query)
     forum_result = cursor.fetchall()
 
-    query = """SELECT {} FROM {} WHERE LOWER({}) = '{}';""".format(
-        'content',
-        'ipterms',
-        'term',
-        keywords
-    )
-    cursor.execute(query)
-    ipterm_result = cursor.fetchall()
+    # query = """SELECT {} FROM {} WHERE LOWER({}) = '{}';""".format(
+    #     'content',
+    #     'ipterms',
+    #     'term',
+    #     keywords
+    # )
+    # cursor.execute(query)
+    # ipterm_result = cursor.fetchall()
 
     final_result = ""
 
-    if ipterm_result:
-        final_result += ipterm_result[0][0]
-    else:
-        print('{} not found in ipterms.'.format(keywords))
-        try:
-            final_result += wiki.summary(keywords)
-        except wiki.DisambiguationError:
-            final_result += wiki.summary(keywords + ' (statistics)')
-        except Exception as e:
-            print("Wiki exception occurred: ", e)
+    # if ipterm_result:
+    #     final_result += ipterm_result[0][0]
+    # else:
+        # print('{} not found in ipterms.'.format(keywords))
+    try:
+        final_result += wiki.summary(keywords)
+    except wiki.DisambiguationError:
+        final_result += wiki.summary(keywords + ' (machine learning)')
+    except Exception as e:
+        print("Wiki exception occurred: ", e)
 
     if forum_result:
         final_result += "\n\n\n ` Here are a few forum discussions related to the topic " \
