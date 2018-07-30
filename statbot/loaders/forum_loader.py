@@ -1,4 +1,5 @@
 from requests import session
+import requests
 import json
 from statbot import all_configurations
 from bs4 import BeautifulSoup
@@ -106,4 +107,5 @@ def run_forum_loader():
     f.close()
     cursor.close()
     connection.close()
-    return result
+
+    # requests.post()
