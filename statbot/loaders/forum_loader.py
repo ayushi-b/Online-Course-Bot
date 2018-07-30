@@ -1,4 +1,5 @@
 from requests import session
+import requests
 import json
 from statbot import all_configurations
 from bs4 import BeautifulSoup
