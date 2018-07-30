@@ -112,7 +112,7 @@ def search_db(keywords, response_url):
             'text': text,
             'user': 'statbot'
         }
-        requests.post(response_url, data=payload)
+        requests.post(response_url, data=json.dumps(payload))
         return
 
     except wiki.PageError:
@@ -131,7 +131,7 @@ def search_db(keywords, response_url):
                 'text': text,
                 'user': 'statbot'
             }
-            requests.post(response_url, data=payload)
+            requests.post(response_url, data=json.dumps(payload))
             return
         except wiki.PageError:
             pass
@@ -139,7 +139,7 @@ def search_db(keywords, response_url):
                 'text': "Please ensure you've used the correct spelling and/or keywords.",
                 'user': 'statbot'
             }
-            requests.post(response_url, data=payload)
+            requests.post(response_url, data=json.dumps(payload))
             return
         except Exception as e:
             print("Wiki exception occurred: ", e)
