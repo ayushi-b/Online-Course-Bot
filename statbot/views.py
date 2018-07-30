@@ -27,12 +27,13 @@ def test():
     print(request.form)
     thr = Thread(target=forum_loader.run_forum_loader)
     thr.start()
-    # result = forum_loader.run_forum_loader()
+
     return "Slackbot is running.\n\n"
 
 
 @app.route('/define', methods=['POST'])
 def define_bot():
+    print(request.form)
     if request.form.get('token') == all_configurations.DEFINE_TOKEN:
         # print(request.form)
         response_url = request.form.get('response_url')
@@ -57,7 +58,7 @@ def search_db(keywords, response_url):
     # print(1, keywords)
     keywords = keywords.strip().split()
     # print(2, keywords)
-    keywords = [str(tb(word.replace('[^\w\s]', '').lower()).correct()) for word in keywords if word not in stop_words]
+    keywords = [str(word.replace('[^\w\s]', '').lower()) for word in keywords if word not in stop_words]
     # print(3, keywords)
     keywords = (" ".join(keywords)).strip()
     # print(keywords)
@@ -96,19 +97,72 @@ def search_db(keywords, response_url):
     # if ipterm_result:
     #     final_result += ipterm_result[0][0]
     # else:
-        # print('{} not found in ipterms.'.format(keywords))
+    #     print('{} not found in ipterms.'.format(keywords))
+
     try:
         final_result += wiki.summary(keywords)
+
     except wiki.DisambiguationError:
-        final_result += wiki.summary(keywords + ' (machine learning)')
+
+        text = "` Multiple results found. Choose a specific term from the ones given below. " \
+               "(Please use the exact keywords to specify your query) :` \n\n"
+        text += "\n".join(wiki.search(keywords))
+
+        payload = {
+            'text': text,
+            'user': 'statbot'
+        }
+        requests.post(response_url, data=payload)
+        return
+
+    except wiki.PageError:
+        split_words = keywords.split(" ")
+        corrected_words = [tb(word.strip()).correct() for word in split_words]
+        keywords = " ".join(corrected_words).strip()
+
+        try:
+            final_result += wiki.summary(keywords)
+        except wiki.DisambiguationError:
+            text = "` Multiple results found. Choose a specific term from the ones given below. " \
+                   "(Please use the exact keywords to specify your query) :` \n\n"
+            text += "\n".join(wiki.search(keywords))
+
+            payload = {
+                'text': text,
+                'user': 'statbot'
+            }
+            requests.post(response_url, data=payload)
+            return
+        except wiki.PageError:
+            pass
+            payload = {
+                'text': "Please ensure you've used the correct spelling and/or keywords.",
+                'user': 'statbot'
+            }
+            requests.post(response_url, data=payload)
+            return
+        except Exception as e:
+            print("Wiki exception occurred: ", e)
     except Exception as e:
         print("Wiki exception occurred: ", e)
 
     if forum_result:
         final_result += "\n\n\n ` Here are a few forum discussions related to the topic " \
                         "that may be useful: ` \n"
+
+        num = 0
         for res in forum_result:
+            num += 1
+            if num > 10:
+                final_result += "\n\n*Found {} related forum posts. To have the full list please use the _{}_ slash command.*".format(
+                    len(forum_result),
+                    all_configurations.FORUM_POST_SLASH_COMMAND
+                )
+                break
             final_result += " > " + res[0] + "\n"
+    elif not final_result:
+        final_result = "No results found. Please ensure you've used the correct spelling and/or keywords. " \
+                       "\nOr try using more specific terms in your query."
     else:
         final_result += "\n\n\n ` NO RELATED FORUM POST FOUND. `"
 

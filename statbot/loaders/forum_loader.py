@@ -1,5 +1,4 @@
 from requests import session
-import requests
 import json
 from statbot import all_configurations
 from bs4 import BeautifulSoup
@@ -29,11 +28,11 @@ def run_forum_loader():
 
     cursor = connection.cursor()
 
-    try:
-        cursor.execute("""DROP TABLE "ipterms";""")
-        cursor.execute("""Truncate "forum_data";""")
-    except Exception as e:
-        pass
+    # try:
+    #     cursor.execute("""DROP TABLE "ipterms";""")
+    #     cursor.execute("""Truncate "forum_data";""")
+    # except Exception as e:
+    #     pass
 
     cursor.execute('SELECT post_id FROM {};'.format(
         all_configurations.FORUM_TABLE
@@ -41,6 +40,7 @@ def run_forum_loader():
     pids = [int(pid[0]) for pid in cursor.fetchall()]
 
     result = "Before running loader : " + str(len(pids))
+    print(result)
 
     new_ids = []
 
@@ -61,7 +61,7 @@ def run_forum_loader():
         for j in all_configurations.UDACITY_FORUM_TABS:
             for i in range(500):
 
-                # print("\n PAGE - {} \t ({})\n".format(i + 1, j))
+                print("\n PAGE - {} \t ({})\n".format(i + 1, j))
 
                 response = c.get(all_configurations.UD_FORUM_URL.format(j, i))
 
@@ -101,11 +101,16 @@ def run_forum_loader():
                         connection.commit()
 
     cursor.execute('SELECT * FROM {};'.format(all_configurations.FORUM_TABLE))
-    result += "\nAfter running loader : " + cursor.rowcount
+    result += "\nAfter running loader : " + str(cursor.rowcount)
 
     connection.commit()
     f.close()
     cursor.close()
     connection.close()
 
-    # requests.post()
+    print(result)
+
+
+if __name__ == '__main__':
+    run_forum_loader()
+
