@@ -8,85 +8,98 @@ from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 from datetime import datetime
 
 
-emoji_pattern = re.compile(all_configurations.EMOTICONS, flags=re.UNICODE)
+def run_forum_loader():
 
-payload = {
-    'email': all_configurations.EMAIL,
-    'password': all_configurations.PASSWORD
-}
+    emoji_pattern = re.compile(all_configurations.EMOTICONS, flags=re.UNICODE)
 
-connection = pg.connect(
-    host=all_configurations.HOST,
-    user=all_configurations.USER,
-    dbname=all_configurations.DATABASE
-)
-connection.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+    payload = {
+        'email': all_configurations.EMAIL,
+        'password': all_configurations.PASSWORD
+    }
 
-cursor = connection.cursor()
+    connection = pg.connect(
+        host=all_configurations.HOST,
+        user=all_configurations.USER,
+        dbname=all_configurations.DATABASE,
+        password=all_configurations.DB_PWD,
+        port=all_configurations.PORT
+    )
+    connection.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
 
-cursor.execute('SELECT post_id FROM {};'.format(
-    all_configurations.FORUM_TABLE
-))
-pids = [int(pid[0]) for pid in cursor.fetchall()]
+    cursor = connection.cursor()
 
-new_ids = []
+    try:
+        cursor.execute("""DROP TABLE "ipterms";""")
+        cursor.execute("""Truncate "forum_data";""")
+    except Exception as e:
+        pass
 
-f = open("logs/ud/udfailure{}.txt".format(datetime.now().strftime('%Y%m%d%H%M%S')), 'w')
+    cursor.execute('SELECT post_id FROM {};'.format(
+        all_configurations.FORUM_TABLE
+    ))
+    pids = [int(pid[0]) for pid in cursor.fetchall()]
 
-with session() as c:
+    result = "Before running loader : " + str(len(pids))
 
-    url = all_configurations.UDACITY_SIGNIN_URL
-    c.post(url, data=json.dumps(payload))
+    new_ids = []
 
-    cnt = 0
-    count = 0
+    f = open("logs/ud/udfailure{}.txt".format(datetime.now().strftime('%Y%m%d%H%M%S')), 'w')
 
-    for j in all_configurations.UDACITY_FORUM_TABS:
-        for i in range(500):
+    with session() as c:
 
-            print("\n PAGE - {} \t ({})\n".format(i + 1, j))
+        url = all_configurations.UDACITY_SIGNIN_URL
+        c.post(url, data=json.dumps(payload))
 
-            response = c.get(all_configurations.UD_FORUM_URL.format(j, i))
+        cnt = 0
+        count = 0
 
-            s = BeautifulSoup(response.text, 'html.parser')
+        for j in all_configurations.UDACITY_FORUM_TABS:
+            for i in range(500):
 
-            divs = s.find_all('div', {"itemprop": 'itemListElement'})
-            if not divs:
-                break
+                # print("\n PAGE - {} \t ({})\n".format(i + 1, j))
 
-            for div in divs:
-                link = div.find('a').get('href')
-                topic = emoji_pattern.sub(r'', div.find('span').text).strip()
-                post_id = link.split('/')[-1]
+                response = c.get(all_configurations.UD_FORUM_URL.format(j, i))
 
-                if (int(post_id) in pids) or (int(post_id) in new_ids):
-                    # print("Repeated {} from {}.".format(link, j))
-                    continue
+                s = BeautifulSoup(response.text, 'html.parser')
 
-                query = """INSERT INTO {}(post_id, topic, link) VALUES ({}, '{}', '{}');""".format(
-                    all_configurations.FORUM_TABLE,
-                    post_id,
-                    topic.replace('\'', '\"'),
-                    link.replace('\'', '\"'),
-                )
-                print(query)
+                divs = s.find_all('div', {"itemprop": 'itemListElement'})
+                if not divs:
+                    break
 
-                try:
-                    cursor.execute(query)
-                    cnt += 1
-                    new_ids.append(int(post_id))
-                    print("Added {} posts to db. Discarded {} till now.".format(cnt, count))
-                except Exception as e:
-                    count += 1
-                    print("\nUnable to add post {} to db.\n".format(link))
-                    f.write(link)
-                finally:
-                    connection.commit()
+                for div in divs:
+                    link = div.find('a').get('href')
+                    topic = emoji_pattern.sub(r'', div.find('span').text).strip()
+                    post_id = link.split('/')[-1]
 
-cursor.execute('SELECT * FROM {};'.format(all_configurations.FORUM_TABLE))
-print(cursor.rowcount)
+                    if (int(post_id) in pids) or (int(post_id) in new_ids):
+                        # print("Repeated {} from {}.".format(link, j))
+                        continue
 
-connection.commit()
-f.close()
-cursor.close()
-connection.close()
+                    query = """INSERT INTO {}(post_id, topic, link) VALUES ({}, '{}', '{}');""".format(
+                        all_configurations.FORUM_TABLE,
+                        post_id,
+                        topic.replace('[^\w\s]', ' '),
+                        link,
+                    )
+                    # print(query)
+
+                    try:
+                        cursor.execute(query)
+                        cnt += 1
+                        new_ids.append(int(post_id))
+                        # print("Added {} posts to db. Discarded {} till now.".format(cnt, count))
+                    except Exception as e:
+                        count += 1
+                        # print("\nUnable to add post {} to db.\n".format(link))
+                        f.write(link)
+                    finally:
+                        connection.commit()
+
+    cursor.execute('SELECT * FROM {};'.format(all_configurations.FORUM_TABLE))
+    result += "\nAfter running loader : " + cursor.rowcount
+
+    connection.commit()
+    f.close()
+    cursor.close()
+    connection.close()
+    return result
