@@ -24,8 +24,11 @@ emoji_pattern = re.compile(all_configurations.EMOTICONS, flags=re.UNICODE)
 
 @app.route('/', methods=['GET'])
 def test():
-    result = forum_loader.run_forum_loader()
-    return "Slackbot is running.\n\n" + result
+    print(request.form)
+    thr = Thread(target=forum_loader.run_forum_loader)
+    thr.start()
+    # result = forum_loader.run_forum_loader()
+    return "Slackbot is running.\n\n"
 
 
 @app.route('/define', methods=['POST'])
