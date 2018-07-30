@@ -43,6 +43,10 @@ def run_forum_loader():
 
     new_ids = []
 
+    import os
+    if not os.path.exists("logs/ud/"):
+        os.makedirs("logs/ud/")
+
     f = open("logs/ud/udfailure{}.txt".format(datetime.now().strftime('%Y%m%d%H%M%S')), 'w')
 
     with session() as c:
