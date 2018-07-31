@@ -8,3 +8,5 @@
 **/venv/
 **/db_conversion.py
 **/logs
+**/media
+**/README.md
