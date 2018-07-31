@@ -38,6 +38,8 @@ def define_bot():
         # search_db(request.form.get('text'), response_url)
 
         keywords = request.form.get('text')
+        if not keywords:
+            return Response("*_Please enter a query._*")
         thr = Thread(target=search_db, args=[keywords, response_url])
         thr.start()
 
@@ -58,11 +60,11 @@ def search_db(keywords, response_url):
     query_keywords = keywords
 
     query_keywords = [word for word in query_keywords if word[0] != '(' and word [-1] != ')']
-    query_keywords = [str(word.replace('[^\w\s]', '').lower()) for word in query_keywords if word not in stop_words]
+    query_keywords = [str(re.sub(all_configurations.SPECIAL_CHARACTERS, ' ', word).lower()) for word in query_keywords if word not in stop_words]
     query_keywords = (" ".join(query_keywords)).strip()
 
     # print(2, keywords)
-    keywords = [str(word.replace('[^\w\s]', '').lower()) for word in keywords if word not in stop_words]
+    keywords = [str(re.sub(all_configurations.SPECIAL_CHARACTERS, ' ', word).lower()) for word in keywords if word not in stop_words]
     # print(3, keywords)
     keywords = (" ".join(keywords)).strip()
     # print(keywords)
@@ -103,6 +105,7 @@ def search_db(keywords, response_url):
     # else:
     #     print('{} not found in ipterms.'.format(keywords))
 
+    # Adding a bogus comment to make changes
     try:
         final_result += wiki.summary(keywords)
 
@@ -121,7 +124,7 @@ def search_db(keywords, response_url):
 
     except wiki.PageError:
         split_words = keywords.split(" ")
-        corrected_words = [tb(word.strip()).correct() for word in split_words]
+        corrected_words = [str(tb(word.strip()).correct()) for word in split_words]
         keywords = " ".join(corrected_words).strip()
 
         try:
