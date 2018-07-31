@@ -58,11 +58,11 @@ def search_db(keywords, response_url):
     query_keywords = keywords
 
     query_keywords = [word for word in query_keywords if word[0] != '(' and word [-1] != ')']
-    query_keywords = [str(word.replace('[^\w\s]', '').lower()) for word in query_keywords if word not in stop_words]
+    query_keywords = [str(re.sub(all_configurations.SPECIAL_CHARACTERS, ' ', word).lower()) for word in query_keywords if word not in stop_words]
     query_keywords = (" ".join(query_keywords)).strip()
 
     # print(2, keywords)
-    keywords = [str(word.replace('[^\w\s]', '').lower()) for word in keywords if word not in stop_words]
+    keywords = [str(re.sub(all_configurations.SPECIAL_CHARACTERS, ' ', word).lower()) for word in keywords if word not in stop_words]
     # print(3, keywords)
     keywords = (" ".join(keywords)).strip()
     # print(keywords)

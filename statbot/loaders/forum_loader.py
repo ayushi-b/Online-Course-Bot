@@ -29,11 +29,10 @@ def run_forum_loader():
 
     cursor = connection.cursor()
 
-    # try:
-    #     cursor.execute("""DROP TABLE "ipterms";""")
-    #     cursor.execute("""Truncate "forum_data";""")
-    # except Exception as e:
-    #     pass
+    try:
+        cursor.execute("""Truncate "forum_data";""")
+    except Exception as e:
+        pass
 
     cursor.execute('SELECT post_id FROM {};'.format(
         all_configurations.FORUM_TABLE
@@ -75,6 +74,7 @@ def run_forum_loader():
                 for div in divs:
                     link = div.find('a').get('href')
                     topic = emoji_pattern.sub(r'', div.find('span').text).strip()
+                    topic = " ".join(re.sub(all_configurations.SPECIAL_CHARACTERS, ' ', topic).split())
                     post_id = link.split('/')[-1]
 
                     if (int(post_id) in pids) or (int(post_id) in new_ids):
@@ -84,7 +84,7 @@ def run_forum_loader():
                     query = """INSERT INTO {}(post_id, topic, link) VALUES ({}, '{}', '{}');""".format(
                         all_configurations.FORUM_TABLE,
                         post_id,
-                        topic.replace('[^\w\s]', ' '),
+                        topic.strip(),
                         link,
                     )
                     # print(query)
