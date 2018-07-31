@@ -29,10 +29,10 @@ def run_forum_loader():
 
     cursor = connection.cursor()
 
-    try:
-        cursor.execute("""Truncate "forum_data";""")
-    except Exception as e:
-        pass
+    # try:
+    #     cursor.execute("""Truncate "forum_data";""")
+    # except Exception as e:
+    #     pass
 
     cursor.execute('SELECT post_id FROM {};'.format(
         all_configurations.FORUM_TABLE

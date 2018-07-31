@@ -38,6 +38,8 @@ def define_bot():
         # search_db(request.form.get('text'), response_url)
 
         keywords = request.form.get('text')
+        if not keywords:
+            return Response("*_Please enter a query._*")
         thr = Thread(target=search_db, args=[keywords, response_url])
         thr.start()
 
@@ -122,7 +124,7 @@ def search_db(keywords, response_url):
 
     except wiki.PageError:
         split_words = keywords.split(" ")
-        corrected_words = [tb(word.strip()).correct() for word in split_words]
+        corrected_words = [str(tb(word.strip()).correct()) for word in split_words]
         keywords = " ".join(corrected_words).strip()
 
         try:
