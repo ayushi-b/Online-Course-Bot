@@ -10,7 +10,7 @@ from threading import Thread
 import requests
 import json
 from statbot import app
-from statbot.loaders import forum_loader
+# from statbot.loaders import forum_loader
 
 
 stop_words = set(stopwords.words('english'))
@@ -24,8 +24,8 @@ emoji_pattern = re.compile(all_configurations.EMOTICONS, flags=re.UNICODE)
 
 @app.route('/', methods=['GET'])
 def test():
-    thr = Thread(target=forum_loader.run_forum_loader)
-    thr.start()
+    # thr = Thread(target=forum_loader.run_forum_loader)
+    # thr.start()
 
     return "Slackbot is running.\n\n"
 

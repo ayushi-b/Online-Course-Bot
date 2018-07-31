@@ -2,6 +2,8 @@
 
 A [Slack](https://slack.com) Bot that uses [slash commands]() to get quick summary of topics from wikipedia.
 
+The bot can be accessed on my personal workspace [here](https://join.slack.com/t/ayushi-bansal/shared_invite/enQtNDA4MTA0MDA1ODkwLWNmM2Y5NzNhMmRmYTczOGNjY2I1N2YwZmRkNjJmMWNhZTg5YjQyOGZkYWIzYTFkMTZmOTBkYzI5YjZmZjQ4Mjk).
+
 <br>
 
 ### Current status
